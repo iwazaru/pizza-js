@@ -5,6 +5,7 @@ const PizzaNotOnTheMenuEvent = require('../domain/PizzaNotOnTheMenuEvent');
 const NotEnoughIngredientsEvent = require('../domain/NotEnoughIngredientsEvent');
 const PaymentFailedEvent = require('../domain/PaymentFailedEvent');
 const { Order, OrderStatuses } = require('../domain/order');
+const Inventory = require('../domain/Inventory');
 
 module.exports = {
     OrderAPizza: class OrderAPizza {
@@ -58,14 +59,10 @@ module.exports = {
 
             const recipe = this.pizzaRecipeRepository.getByPizzaFlavorId(command.pizzaFlavor);
             const inventory = this.ingredientInventoryRepository.getByPizzeriaId(command.pizzeriaId);
-            for (const i in recipe) {
-                const ingredientToCheck = recipe[i];
-                const ingredientInInventory = inventory.find(i => i.ingredientId === ingredientToCheck);
-                if (ingredientInInventory == null || ingredientInInventory.quantity <= 0) {
-                    order.status = OrderStatuses.ON_ERROR;
-                    this.orderRepository.save(order);
-                    return new NotEnoughIngredientsEvent();
-                }
+            if (!inventory.hasEnoughIngredientsToCookPizza(recipe)) {
+                order.status = OrderStatuses.ON_ERROR;
+                this.orderRepository.save(order);
+                return new NotEnoughIngredientsEvent();
             }
             this.ingredientInventoryRepository.decrementIngredientsOfPizzeria(command.pizzeriaId, recipe);
 

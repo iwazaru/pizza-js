@@ -1,11 +1,12 @@
 const inventoriesDataTable = require('./tables/inventories');
 const _ = require("lodash");
+const Inventory = require('../domain/Inventory');
 
 module.exports = class IngredientInventoryRepository {
     #dataSource = _.cloneDeep(inventoriesDataTable);
 
     getByPizzeriaId(pizzeriaId) {
-        return this.#dataSource
+        const ingredientStock = this.#dataSource
             .filter(i => i.pizzeriaId === pizzeriaId)
             .map(i => {
                 return {
@@ -13,6 +14,7 @@ module.exports = class IngredientInventoryRepository {
                     quantity: i.quantity
                 }
             });
+        return new Inventory(ingredientStock);
     }
 
     decrementIngredientsOfPizzeria(pizzeriaId, ingredients) {
